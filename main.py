@@ -13,7 +13,7 @@ load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
 # IDs de tu amigo (debe cambiarlas por las de su servidor si son distintas)
-ID_CANAL_LOGS = 1534597739189506058}
+ID_CANAL_LOGS = 1534597739189506058
 ID_CANAL_BIENVENIDA = 1534589707445469214  # Canal #wlc
 ROL_AUTOMATICO = "Members" 
 COLOR_CELESTE = 0x00FFFF 
