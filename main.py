@@ -124,11 +124,11 @@ async def on_member_join(member):
         print(f"❌ Error inesperado al dar rol automático: {e}")
 
 
-# --- COMANDO DE PRUEBA PARA TIKTOK ---
+# --- COMANDO DE PRUEBA PARA TIKTOK (VER EL ÚLTIMO VIDEO) ---
 @bot.command(name="test_tiktok")
 @commands.is_owner()
 async def test_tiktok(ctx):
-    await ctx.send("🔍 Probando la alerta de TikTok manualmente...")
+    await ctx.send("🔍 Probando cómo se vería la última alerta de TikTok...")
     
     canal = bot.get_channel(ID_CANAL_TIKTOK)
     if not canal:
@@ -141,12 +141,14 @@ async def test_tiktok(ctx):
             await ctx.send("⚠️ El feed RSS no devolvió ninguna entrada.")
             return
 
+        # Tomamos el último video que ya subiste para que veas el diseño
         latest_entry = feed.entries[0]
         titulo = latest_entry.get("title", "¡Nuevo TikTok publicado! 🎬")
         link = latest_entry.get("link", "")
 
+        # Enviamos la prueba al canal de TikTok real
         await canal.send(f"🚨 **¡Nuevo TikTok!** <@&1539717338331619358> 🎥\n{titulo}\n{link}")
-        await ctx.send("✅ ¡Mensaje de prueba enviado con éxito!")
+        await ctx.send("✅ ¡Mensaje de prueba enviado al canal de TikTok con éxito!")
 
     except Exception as e:
         await ctx.send(f"❌ Ocurrió un error: {e}")
