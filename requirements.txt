@@ -1,4 +1,5 @@
 discord.py
 python-dotenv
 Flask
-pip install feedparser
+feedparser
+werkzeug
