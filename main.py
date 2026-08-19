@@ -16,8 +16,8 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 # IDs de tu servidor
 ID_CANAL_LOGS = 1534597739189506058
 ID_CANAL_BIENVENIDA = 1534589707445469214  # Canal #wlc
-ID_CANAL_TIKTOK = 1534602858589065226     # Canal donde avisará los TikToks (cámbialo si quieres otro)
-TIKTOK_RSS_URL = https://rss.app/r/feed/DZ8Gveq2eJ3Ph50E  # Tu enlace RSS de TikTok
+ID_CANAL_TIKTOK = 1534602858589065226     # Canal donde avisará los TikToks
+TIKTOK_RSS_URL = "https://rss.app/r/feed/DZ8Gveq2eJ3Ph50E"  # ✅ ¡Con comillas!
 
 ROL_AUTOMATICO = "✦ Members" 
 COLOR_CELESTE = 0x00FFFF 
@@ -123,13 +123,13 @@ async def on_member_join(member):
     except Exception as e:
         print(f"❌ Error inesperado al dar rol automático: {e}")
 
+
 # --- COMANDO DE PRUEBA PARA TIKTOK ---
 @bot.command(name="test_tiktok")
-@commands.is_owner() # Opcional: para que solo tú (el dueño del bot) puedas usarlo
+@commands.is_owner()
 async def test_tiktok(ctx):
     await ctx.send("🔍 Probando la alerta de TikTok manualmente...")
     
-    # Llamamos directamente a la función encargada de revisar el RSS
     canal = bot.get_channel(ID_CANAL_TIKTOK)
     if not canal:
         await ctx.send("❌ No se encontró el canal de TikTok configurado.")
@@ -141,16 +141,17 @@ async def test_tiktok(ctx):
             await ctx.send("⚠️ El feed RSS no devolvió ninguna entrada.")
             return
 
-        # Tomamos el último video disponible para la prueba
         latest_entry = feed.entries[0]
         titulo = latest_entry.get("title", "¡Nuevo TikTok publicado! 🎬")
         link = latest_entry.get("link", "")
 
-        await canal.send(f"🚨 **¡Nuevo TikTok!** (Prueba)\n{titulo}\n{link}")
+        await canal.send(f"🚨 **¡Nuevo TikTok!** <@&1539717338331619358> 🎥\n{titulo}\n{link}")
         await ctx.send("✅ ¡Mensaje de prueba enviado con éxito!")
 
     except Exception as e:
         await ctx.send(f"❌ Ocurrió un error: {e}")
+
+
 # --- EVENTOS DE USUARIOS (EXPULSIONES Y ACTUALIZACIÓN DE RANGOS) ---
 @bot.event
 async def on_member_remove(member):
