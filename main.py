@@ -4,18 +4,22 @@ from datetime import datetime
 from collections import defaultdict
 
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from flask import Flask
+import feedparser
 
 # 1. CONFIGURACIÓN ⚙️
 load_dotenv()
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-# IDs de tu amigo (debe cambiarlas por las de su servidor si son distintas)
+# IDs de tu servidor
 ID_CANAL_LOGS = 1534597739189506058
 ID_CANAL_BIENVENIDA = 1534589707445469214  # Canal #wlc
-ROL_AUTOMATICO = "Members" 
+ID_CANAL_TIKTOK = 1534602858589065226     # Canal donde avisará los TikToks (cámbialo si quieres otro)
+TIKTOK_RSS_URL = https://rss.app/r/feed/DZ8Gveq2eJ3Ph50E  # Tu enlace RSS de TikTok
+
+ROL_AUTOMATICO = "✦ Members" 
 COLOR_CELESTE = 0x00FFFF 
 
 intents = discord.Intents.default()
@@ -27,6 +31,7 @@ intents.reactions = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 spam_tracker = defaultdict(list)
+ultimo_tiktok_id = None
 
 
 # --- WEB PARA RAILWAY ---
@@ -46,6 +51,42 @@ async def run_web():
     await loop.run_in_executor(None, server.serve_forever)
 
 
+# --- TAREA AUTOMÁTICA PARA TIKTOK ---
+@tasks.loop(minutes=5)
+async def check_tiktok_updates():
+    global ultimo_tiktok_id
+    canal = bot.get_channel(ID_CANAL_TIKTOK)
+    if not canal:
+        return
+
+    try:
+        feed = feedparser.parse(TIKTOK_RSS_URL)
+        if not feed.entries:
+            return
+
+        latest_entry = feed.entries[0]
+        entry_id = latest_entry.get("id", latest_entry.get("link"))
+
+        if ultimo_tiktok_id is None:
+            ultimo_tiktok_id = entry_id
+            return
+
+        if entry_id != ultimo_tiktok_id:
+            ultimo_tiktok_id = entry_id
+            titulo = latest_entry.get("title", "¡Nuevo TikTok publicado! 🎬")
+            link = latest_entry.get("link", "")
+
+            await canal.send(f"🚨 **¡Nuevo TikTok!** <@&1539717338331619358> 🎥\n{titulo}\n{link}")
+            print(f"✅ Notificación de TikTok enviada: {link}")
+
+    except Exception as e:
+        print(f"❌ Error al verificar el RSS de TikTok: {e}")
+
+@check_tiktok_updates.before_loop
+async def before_tiktok_task():
+    await bot.wait_until_ready()
+
+
 # --- FUNCIÓN DE LOGS ---
 async def send_log_embed(action_title, target_obj, color, description, is_generic=False):
     log_channel = bot.get_channel(ID_CANAL_LOGS)
@@ -54,7 +95,6 @@ async def send_log_embed(action_title, target_obj, color, description, is_generi
     
     if is_generic:
         icon = target_obj.guild.icon.url if target_obj.guild.icon else None
-        # Marca/Nombre adaptado para el bot de tu amigo
         embed.set_author(name="PAPUDADO", icon_url=icon) 
     else:
         embed.set_author(name=action_title, icon_url=target_obj.display_avatar.url)
@@ -99,14 +139,12 @@ async def on_member_remove(member):
 @bot.event
 async def on_member_update(before, after):
     if before.roles != after.roles:
-        # Se quitó un rol / rango
         if len(before.roles) > len(after.roles):
             roles_quitados = [r for r in before.roles if r not in after.roles]
             for rol in roles_quitados:
                 desc = f"{after.mention} > **{rol.name}** was removed"
                 await send_log_embed("Role Removed", after, 0xe74c3c, desc)
         
-        # Se agregó un rol / rango
         elif len(after.roles) > len(before.roles):
             roles_dados = [r for r in after.roles if r not in before.roles]
             for rol in roles_dados:
@@ -170,6 +208,8 @@ async def on_message(message):
 @bot.event
 async def on_ready():
     print(f"✅ {bot.user} online. Configuración para PAPUDADO activa.")
+    if not check_tiktok_updates.is_running():
+        check_tiktok_updates.start()
 
 
 # --- ARRANQUE DUAL ASÍNCRONO ---
